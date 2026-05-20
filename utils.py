@@ -24,19 +24,23 @@ try:
 except ImportError:
     print("Warning: TruthfulQA dependencies not available. Some evaluation functions may not work.")
 
-ENGINE_MAP = {
-    # 'llama_7B': 'baffo32/decapoda-research-llama-7B-hf',
-    'llama_7B': 'huggyllama/llama-7b',
-    'alpaca_7B': 'circulus/alpaca-7b',
-    'vicuna_7B': 'AlekseyKorshuk/vicuna-7b',
-    'llama2_chat_7B': 'meta-llama/Llama-2-7b-chat-hf',
-    'llama2_chat_13B': 'meta-llama/Llama-2-13b-chat-hf',
-    'llama2_chat_70B': 'meta-llama/Llama-2-70b-chat-hf',
-    'llama3_8B': 'meta-llama/Meta-Llama-3-8B',
-    'llama3_8B_instruct': 'meta-llama/Meta-Llama-3-8B-Instruct',
-    'llama3_70B': 'meta-llama/Meta-Llama-3-70B',
-    'llama3_70B_instruct': 'meta-llama/Meta-Llama-3-70B-Instruct',
-}
+try:
+    from config import MODEL_NAME_TO_PATH
+    ENGINE_MAP = dict(MODEL_NAME_TO_PATH)
+except ImportError:
+    ENGINE_MAP = {
+        'llama3_8B': 'meta-llama/Meta-Llama-3-8B',
+        'llama3_8B_instruct': 'meta-llama/Meta-Llama-3-8B-Instruct',
+        'llama3.1_8B': 'meta-llama/Llama-3.1-8B',
+        'llama3_70B': 'meta-llama/Meta-Llama-3-70B',
+        'llama3_70B_instruct': 'meta-llama/Meta-Llama-3-70B-Instruct',
+        'llama2_chat_7B': 'meta-llama/Llama-2-7b-chat-hf',
+        'llama2_chat_13B': 'meta-llama/Llama-2-13b-chat-hf',
+        'llama2_chat_70B': 'meta-llama/Llama-2-70b-chat-hf',
+        'llama_7B': 'huggyllama/llama-7b',
+        'alpaca_7B': 'circulus/alpaca-7b',
+        'vicuna_7B': 'AlekseyKorshuk/vicuna-7b',
+    }
 
 from truthfulqa.utilities import (
     format_prompt,

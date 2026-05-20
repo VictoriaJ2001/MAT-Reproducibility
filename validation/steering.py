@@ -5,6 +5,13 @@ import numpy as np
 import argparse
 import os
 import json
+import sys
+sys.path.append('../')
+
+from config import (
+    FEATURES_DIR, CHECKPOINT_DIR, DATASETS, NUM_ATTRIBUTES,
+    TRAIN_HYPERPARAMS, MODEL_NAME
+)
 
 
 def gaussian_kernel(x, y, sigma):
@@ -201,33 +208,32 @@ def train_multi_task_steering(tasks, num_attributes, batch_size, epochs, lr, sig
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, required=True, help="Specify the model name")
-    parser.add_argument("--layer", type=int, default=14, help="Layer index for intervention")
-    parser.add_argument("--save_path", type=str, default=None, help="Path to save the trained model")
-    parser.add_argument("--batch_size", type=int, default=96, help="Batch size for training")
-    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
-    parser.add_argument("--sigma", type=float, default=2.0, help="Sigma value for Gaussian kernel in MMD loss")
-    parser.add_argument("--lambda_mmd", type=float, default=1.0, help="Weight for MMD loss")
-    parser.add_argument("--lambda_sparse", type=float, default=0.9, help="Weight for sparsity loss")
-    parser.add_argument("--lambda_ortho", type=float, default=0.1, help="Weight for orthogonality loss")
-    parser.add_argument("--lambda_pos", type=float, default=0.9, help="Weight for preservation loss")
+    parser.add_argument("--model_name", type=str, default=MODEL_NAME, help="Model name")
+    parser.add_argument("--layer", type=int, default=14, help="Layer index")
+    parser.add_argument("--save_path", type=str, default=None, help="Checkpoint save path")
+    parser.add_argument("--batch_size", type=int, default=TRAIN_HYPERPARAMS["batch_size"])
+    parser.add_argument("--epochs", type=int, default=TRAIN_HYPERPARAMS["epochs"])
+    parser.add_argument("--lr", type=float, default=TRAIN_HYPERPARAMS["lr"])
+    parser.add_argument("--sigma", type=float, default=TRAIN_HYPERPARAMS["sigma"])
+    parser.add_argument("--lambda_mmd", type=float, default=TRAIN_HYPERPARAMS["lambda_mmd"])
+    parser.add_argument("--lambda_sparse", type=float, default=TRAIN_HYPERPARAMS["lambda_sparse"])
+    parser.add_argument("--lambda_ortho", type=float, default=TRAIN_HYPERPARAMS["lambda_ortho"])
+    parser.add_argument("--lambda_pos", type=float, default=TRAIN_HYPERPARAMS["lambda_pos"])
     args = parser.parse_args()
     
-    datasets = ["truthfulqa", "toxigen", "bbq"]
-    num_attributes = len(datasets)
+    datasets = DATASETS
+    num_attributes = NUM_ATTRIBUTES
     
     if args.save_path is None:
-        args.save_path = f"checkpoints/{args.model_name}_L{args.layer}_mat_steer.pt"
-    
-    # Ensure checkpoints directory exists
-    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+        args.save_path = os.path.join(
+            CHECKPOINT_DIR, f"{args.model_name}_L{args.layer}_mat_steer.pt"
+        )
     
     tasks = {}
     for dataset_name in datasets:
-        # Load the corrected labels (not token_labels)
-        labels = np.load(f'../features/{args.model_name}_{dataset_name}_labels.npy')
-        all_layer_wise_activations = np.load(f'../features/{args.model_name}_{dataset_name}_layer_wise.npy')
+        labels = np.load(f'{FEATURES_DIR}/{args.model_name}_{dataset_name}_labels.npy')
+        all_layer_wise_activations = np.load(f'{FEATURES_DIR}/{args.model_name}_{dataset_name}_layer_wise.npy')
         
         # Filter by positive/negative labels
         pos_acts = torch.tensor(all_layer_wise_activations[labels == 1], dtype=torch.float32)

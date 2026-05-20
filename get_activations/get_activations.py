@@ -12,24 +12,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 # Specific pyvene imports
 from utils import load_task_dataset, get_llama_activations_pyvene
 from interveners import wrapper, Collector
+from config import get_model_path, INTERVENTION_LAYER, ensure_dirs, FEATURES_DIR
 import pyvene as pv
-
-HF_NAMES = {
-    # 'llama_7B': 'baffo32/decapoda-research-llama-7B-hf',
-    'llama_7B': 'huggyllama/llama-7b',
-    'alpaca_7B': 'circulus/alpaca-7b', 
-    'vicuna_7B': 'AlekseyKorshuk/vicuna-7b', 
-    'llama2_chat_7B': 'meta-llama/Llama-2-7b-chat-hf', 
-    'llama2_chat_13B': 'meta-llama/Llama-2-13b-chat-hf', 
-    'llama2_chat_70B': 'meta-llama/Llama-2-70b-chat-hf', 
-    'llama3_8B': 'meta-llama/Meta-Llama-3-8B',
-    'llama3_8B_instruct': 'meta-llama/Meta-Llama-3-8B-Instruct',
-    'llama3_70B': 'meta-llama/Meta-Llama-3-70B',
-    'llama3_70B_instruct': 'meta-llama/Meta-Llama-3-70B-Instruct',
-    'llama3.1_8B': 'meta-llama/Llama-3.1-8B',
-    'llama3.1_8B_chat': 'mathewhe/Llama-3.1-8B-Chat',
-    'qwen2.5_7B': 'Qwen/Qwen2.5-7B',
-}
 
 def main(): 
     """
@@ -39,14 +23,16 @@ def main():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str, default='llama_7B')
-    parser.add_argument('--model_prefix', type=str, default='', help='prefix of model name')
-    parser.add_argument('--dataset_name', type=str, default='tqa_mc2')
-    parser.add_argument('--layer', type=int, default=14)
+    parser.add_argument('--model_name', type=str, default='llama3_8B_instruct')
+    parser.add_argument('--model_path', type=str, default=None,
+                        help='Explicit model path (overrides config lookup)')
+    parser.add_argument('--dataset_name', type=str, default='truthfulqa')
+    parser.add_argument('--layer', type=int, default=INTERVENTION_LAYER)
     parser.add_argument('--device', type=int, default=0)
     args = parser.parse_args()
 
-    model_name_or_path = HF_NAMES[args.model_prefix + args.model_name]
+    model_name_or_path = args.model_path or get_model_path(args.model_name)
+    ensure_dirs()
 
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, low_cpu_mem_usage=True, torch_dtype=torch.float16, device_map="auto")
@@ -96,16 +82,16 @@ def main():
     labels = np.array(labels, dtype=np.int32)  # (N,)
 
     # Ensure features directory exists
-    os.makedirs('../features', exist_ok=True)
+    os.makedirs(FEATURES_DIR, exist_ok=True)
 
     print("Saving labels")
-    np.save(f'../features/{args.model_name}_{args.dataset_name}_labels.npy', labels)
+    np.save(f'{FEATURES_DIR}/{args.model_name}_{args.dataset_name}_labels.npy', labels)
 
     print("Saving layer wise activations")
-    np.save(f'../features/{args.model_name}_{args.dataset_name}_layer_wise.npy', all_layer_wise_activations)
+    np.save(f'{FEATURES_DIR}/{args.model_name}_{args.dataset_name}_layer_wise.npy', all_layer_wise_activations)
     
     print("Saving head wise activations")
-    np.save(f'../features/{args.model_name}_{args.dataset_name}_head_wise.npy', all_head_wise_activations)
+    np.save(f'{FEATURES_DIR}/{args.model_name}_{args.dataset_name}_head_wise.npy', all_head_wise_activations)
 
 if __name__ == '__main__':
     main()
