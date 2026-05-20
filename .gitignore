@@ -173,6 +173,7 @@ cython_debug/
 # MAT-Steer generated artifacts (server only)
 data/
 features/
+models/
 results/
 results_dump/
 validation/checkpoints/
