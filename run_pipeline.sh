@@ -39,8 +39,8 @@ MODEL_DIR="models/Llama-3-8B-Instruct"
 if [ -f "$MODEL_DIR/config.json" ]; then
     echo "[Step 0.5] Model already exists at $MODEL_DIR, skipping."
 else
-    echo "[Step 0.5] Downloading model from HF mirror..."
-    python scripts/download_model.py
+    echo "[Step 0.5] Downloading model from ModelScope..."
+    python scripts/download_model_ms.py
 fi
 
 # ============================================================
