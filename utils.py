@@ -21,8 +21,18 @@ try:
     from truthfulqa import utilities, metrics
     import openai
     from truthfulqa.configs import BEST_COL, ANSWER_COL, INCORRECT_COL
+    from truthfulqa.utilities import (
+        format_prompt,
+        format_prompt_with_answer_strings,
+        split_multi_answer,
+        format_best,
+    )
+    from truthfulqa.models import set_columns, MC_calcs
+    from truthfulqa.evaluate import format_frame
+    _TQA_AVAILABLE = True
 except ImportError:
     print("Warning: TruthfulQA dependencies not available. Some evaluation functions may not work.")
+    _TQA_AVAILABLE = False
 
 try:
     from config import MODEL_NAME_TO_PATH
@@ -41,15 +51,6 @@ except ImportError:
         'alpaca_7B': 'circulus/alpaca-7b',
         'vicuna_7B': 'AlekseyKorshuk/vicuna-7b',
     }
-
-from truthfulqa.utilities import (
-    format_prompt,
-    format_prompt_with_answer_strings,
-    split_multi_answer,
-    format_best,
-)
-from truthfulqa.models import set_columns, MC_calcs
-from truthfulqa.evaluate import format_frame
 
 
 def load_nq():
