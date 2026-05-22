@@ -183,3 +183,6 @@ validation/results_dump/
 
 # Downloaded dependencies
 TruthfulQA/
+
+# Sisyphus internal
+.sisyphus/
