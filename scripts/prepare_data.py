@@ -79,44 +79,47 @@ def prepare_toxigen(output_dir):
 
 
 def prepare_bbq(output_dir):
-    from datasets import load_dataset
+    import json
+    import urllib.request
 
-    print("Downloading BBQ (HuggingFace: lighteval/bbq)...")
-
-    dataset = None
-    for ds_id in ["lighteval/bbq", "heegyu/bbq"]:
-        try:
-            dataset = load_dataset(ds_id, split="train", trust_remote_code=True)
-            print(f"  Loaded from {ds_id}")
-            break
-        except Exception:
-            print(f"  {ds_id} unavailable, trying next...")
-
-    if dataset is None:
-        raise RuntimeError(
-            "No BBQ dataset source available. "
-            "As a fallback, manually place BBQ data at data/bbq.json with fields: "
-            "context, question, ans0, ans1, ans2, label"
-        )
+    print("Downloading BBQ from BIG-bench GitHub...")
+    url = "https://raw.githubusercontent.com/google/BIG-bench/main/bigbench/benchmark_tasks/bbq_lite_json/task.json"
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as resp:
+        raw = json.loads(resp.read().decode())
 
     data = []
-    for item in dataset:
-        context = item.get("context", "")
-        question = item.get("question", "")
-        ans0 = item.get("ans0", "")
-        ans1 = item.get("ans1", "")
-        ans2 = item.get("ans2", "")
-        label = int(item.get("label", 0))
+    count = 0
+    for item in raw.get("examples", []):
+        context = item.get("context_condition", "")
+        prefix = item.get("question", "")
+        target_scores = item.get("target_scores", {})
+        choice_keys = list(target_scores.keys())
 
-        if question:
-            data.append({
-                "context": context,
-                "question": question,
-                "ans0": ans0,
-                "ans1": ans1,
-                "ans2": ans2,
-                "label": label,
-            })
+        if len(choice_keys) < 2 or not prefix:
+            continue
+
+        ans0 = choice_keys[0] if len(choice_keys) > 0 else ""
+        ans1 = choice_keys[1] if len(choice_keys) > 1 else ""
+        ans2 = choice_keys[2] if len(choice_keys) > 2 else ""
+
+        # label = index of correct answer (target_scores value == 1)
+        correct_idx = 0
+        for i, k in enumerate(choice_keys):
+            if target_scores.get(k, 0) == 1:
+                correct_idx = i
+                break
+
+        full_question = f"{context} {prefix}".strip() if context else prefix
+        data.append({
+            "context": context,
+            "question": full_question,
+            "ans0": ans0,
+            "ans1": ans1,
+            "ans2": ans2,
+            "label": correct_idx,
+        })
+        count += 1
 
     path = os.path.join(output_dir, "bbq.json")
     with open(path, 'w') as f:
