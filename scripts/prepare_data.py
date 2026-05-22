@@ -81,12 +81,27 @@ def prepare_toxigen(output_dir):
 def prepare_bbq(output_dir):
     from datasets import load_dataset
 
-    print("Downloading BBQ (HuggingFace: bbq)...")
-    dataset = load_dataset("heegyu/bbq", split="train")
+    print("Downloading BBQ (HuggingFace: lighteval/bbq)...")
+
+    dataset = None
+    for ds_id in ["lighteval/bbq", "heegyu/bbq"]:
+        try:
+            dataset = load_dataset(ds_id, split="train", trust_remote_code=True)
+            print(f"  Loaded from {ds_id}")
+            break
+        except Exception:
+            print(f"  {ds_id} unavailable, trying next...")
+
+    if dataset is None:
+        raise RuntimeError(
+            "No BBQ dataset source available. "
+            "As a fallback, manually place BBQ data at data/bbq.json with fields: "
+            "context, question, ans0, ans1, ans2, label"
+        )
 
     data = []
     for item in dataset:
-        context = item.get("context", item.get("question_polarity", ""))
+        context = item.get("context", "")
         question = item.get("question", "")
         ans0 = item.get("ans0", "")
         ans1 = item.get("ans1", "")
